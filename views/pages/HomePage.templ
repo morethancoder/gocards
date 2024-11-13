@@ -1,0 +1,194 @@
+package pages
+
+import "GoCards/views/components"
+
+templ HomePage() {
+<!-- Hero -->
+<div class="relative overflow-hidden before:absolute 
+before:top-0 before:start-1/2 
+before:bg-[url('https://preline.co/assets/svg/examples/squared-bg-element.svg')] 
+before:bg-no-repeat before:bg-top before:size-full before:-z-[1] before:transform
+before:-translate-x-1/2">
+  <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
+    <!-- Title -->
+    <div class="mt-5 max-w-xl text-center mx-auto">
+      <h1 class="block font-bold text-gray-800 text-4xl md:text-5xl lg:text-6xl">
+        Where Cards Go Places
+      </h1>
+    </div>
+    <!-- End Title -->
+
+    <div class="mt-5 max-w-3xl text-center mx-auto">
+      <p class="text-lg text-gray-600">
+        Get inspired or inpire others :)
+      </p>
+    </div>
+
+    <!-- Buttons -->
+    <div x-show="!pb.authStore.isValid" class="mt-8 gap-3 flex justify-center">
+      <a class="inline-flex justify-center items-center gap-x-3
+      text-center bg-gradient-to-tl from-blue-600
+      to-blue-600 hover:from-blue-600 hover:to-blue-600
+      focus:outline-none focus:from-blue-600 focus:to-blue-600
+      border border-transparent text-white text-sm font-medium
+      rounded-full py-3 px-4" href="/dashboard" 
+      @click.prevent="loadContent('/dashboard')" >
+        Sign In      
+        </a>
+    </div>
+    <!-- End Buttons -->
+  </div>
+</div>
+<!-- End Hero -->
+
+<!-- Card Blog -->
+<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+  <!-- Title -->
+  <div class="max-w-2xl mx-auto text-center mb-10 lg:mb-14">
+    <h2 class="text-2xl font-bold md:text-4xl md:leading-tight">The Cards</h2>
+    <p class="mt-1 text-gray-600"> Latest</p>
+  </div>
+  <!-- End Title -->
+
+  <!-- Grid -->
+  <div x-data="{
+      loading: false,
+      items: [],
+      page: 0,
+      totalPages: 1,
+
+      async loadItems() {
+          this.loading = true;
+          try {
+            this.page++;
+            if (this.page > this.totalPages) return;
+            const response = await pb.collection('cards').getList(this.page, 9, {
+                    sort: '-created',
+                })
+
+            this.items = [...this.items, ...response.items];
+            this.totalPages = response.totalPages;
+          } catch (error) {
+            console.log(error);
+          } finally {
+              this.loading = false;
+          }
+
+      }
+  }" x-init="$nextTick(() => loadItems())" 
+  >
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <template x-for="item in items">
+        @Card()
+      </template>
+      <template x-if="loading">
+        <span>loading ...</span>
+      </template>
+  </div>
+    
+
+  <!-- Card -->
+    <div class="mt-12 text-center">
+        <button :disabled="loading" x-show="page < totalPages" 
+        @click="loadItems" class="py-3 px-4 inline-flex
+        items-center gap-x-1 text-sm font-medium
+        rounded-full border border-gray-200 bg-white
+        text-blue-600 shadow-sm hover:bg-gray-50
+        focus:outline-none focus:bg-gray-50 disabled:opacity-50
+        disabled:pointer-events-none" >
+          load more
+        </button>
+    </div>
+  </div>
+  <!-- End Card -->
+</div>
+<!-- End Card Blog -->
+}
+
+
+
+templ Card() {
+    <div x-data="{
+        verbose: false,
+        like: null,
+        likesCount: 0,
+
+        async fetchLike() {
+            if (!pb.authStore.isValid) return;
+            const userId = pb.authStore.model.id;
+
+            try {
+                this.like = await pb.collection('likes').getFirstListItem(
+                    `user='${userId}' && card = '${item.id}' `
+                ).catch(()=> null);
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        async fetchLikesCount() {
+            try {
+                this.likesCount = await pb.collection('likes').getList(1, 1, {
+                        filter: `card='${item.id}'`,
+                        fields: 'id'
+                    }).then(res => res.totalItems)
+            } catch (error) {
+                console.log(error);
+            }
+ 
+        },
+
+        async toggleLike() {
+            if (!pb.authStore.isValid) return;
+            const userId = pb.authStore.model.id;
+
+            try {
+                if (this.like) {
+                    await pb.collection('likes').delete(this.like.id);
+                    this.like = null;
+                    this.likesCount--;
+                } else {
+                    this.like = await pb.collection('likes').create({
+                            'user' : userId,
+                            'card': item.id
+                        });
+
+                    this.likesCount++;
+                }
+            } catch (error) {
+                console.log(error);
+            }
+
+
+        }
+    }" x-init="fetchLike" class="group flex flex-col h-full aspect-[3/4] border border-gray-200 
+    hover:border-transparent hover:shadow-lg focus:outline-none
+    focus:border-transparent focus:shadow-lg transition duration-300
+    rounded-xl p-5" @mouseenter="verbose = true; fetchLikesCount();" @mouseleave="verbose = false" >
+      <div class="relative h-full w-full flex items-center justify-center
+      text-center">
+          <div>
+            <h3 
+            x-text="item.title"
+            class="text-xl font-semibold text-gray-800">
+              Title
+            </h3>
+            <p x-transition x-show="verbose"
+            x-text="item.content"
+            class="mt-5 text-gray-600">
+              Content
+            </p>
+          </div>
+          <div class="absolute top-2 end-2">
+            @components.IconHeart(templ.Attributes{
+                    "class" : "size-6",
+                    ":class" : "like ? 'fill-red-200' :'' ",
+                    "@click" : "toggleLike()",
+                    "x-show": "verbose || like",
+                })
+            <span x-show="verbose" x-text="likesCount"></span>
+          </div>
+      </div>
+    </div>
+    <!-- End Card -->
+}
