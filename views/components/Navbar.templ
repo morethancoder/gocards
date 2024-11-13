@@ -1,0 +1,34 @@
+package components
+
+templ Navbar() {
+<!-- ========== HEADER ========== -->
+<header class="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
+  <nav class="mt-4 relative max-w-2xl w-full bg-white border border-gray-200 rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
+    <div class="px-4 md:px-0 flex justify-between items-center w-full py-2">
+      <!-- Logo -->
+      <div>
+        <a class="flex-none rounded-md text-base inline-block
+        focus:outline-none focus:opacity-80"
+        href="/" @click.prevent="loadContent('/')"
+        :class="route === '/' ? 'font-bold': ''">
+          <span>GoCards</span>
+        </a>
+      </div>
+      <!-- End Logo -->
+      <div>
+      <a class="py-0.5 md:py-3 px-4 md:px-1
+           hover:text-gray-800
+      focus:outline-none" href="/dashboard"
+      @click.prevent="loadContent('/dashboard')" 
+      :class="route === '/dashboard' ? ' font-bold text-gray-800'
+      : ' text-gray-500 ' "
+
+      >Dashboard</a>
+      </div>
+
+
+    </div>
+  </nav>
+</header>
+<!-- ========== END HEADER ========== -->
+}

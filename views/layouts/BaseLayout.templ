@@ -1,0 +1,55 @@
+package layouts
+
+import "fmt"
+import "GoCards/views/components"
+import "os"
+
+templ BaseLayout(route string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>GoCards</title>
+			<link rel="stylesheet" href="/static/css/styles.css"/>
+
+			<script defer src="/static/js/alpine.min.js"></script>
+
+            <script src="/static/js/pocketbase.min.js"></script>
+		</head>
+		<body x-data={ fmt.Sprintf(`{
+            pb: null,
+            url: '%s',
+            loading: false,
+            content: '',
+            route: '%s',
+            async loadContent(route) {
+                this.loading = true;
+                try {
+                    const response = await fetch(route, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'AlpineJS',
+                            'Accept': 'text/html',
+                        }
+                        });
+
+                    if (!response.ok) throw new Error('failed to fetch content');
+                    this.content = await response.text();
+                    this.route = route;
+                    window.history.pushState(null, '', route);
+                } catch (error) {
+                    console.log(error);
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }`,os.Getenv("URL"), route)} 
+        x-init="pb = new PocketBase(url); loadContent(route);"
+        >
+            @components.Navbar()
+            <main x-html="content" class="max-w-screen-lg mx-auto p-4">
+            </main>
+		</body>
+	</html>
+}

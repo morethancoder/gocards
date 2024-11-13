@@ -1,0 +1,280 @@
+package pages
+
+templ DashboardPage() {
+    <div x-data="{
+        loading: false,
+        auth: pb.authStore,
+
+        async logout() {
+           this.loading = true; 
+           try {
+                await pb.authStore.clear();
+                await loadContent('/login');
+           } catch (error) {
+               console.log(error);
+           } finally {
+               this.loading = false;
+           }
+        }
+    }" x-init="if (!auth.isValid) loadContent('/login');" >
+        <template x-if="auth.isValid">
+        <div>
+            @DashboardContent()
+        </div>
+        </template>
+    </div>
+}
+
+templ DashboardContent() {
+    <!-- Hero -->
+<div class="relative overflow-hidden bg-gray-50 rounded-xl">
+  <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
+    <!-- Title -->
+    <div class="mt-5 max-w-xl text-center mx-auto">
+      <h1 class="block font-bold text-gray-800 text-4xl md:text-5xl lg:text-6xl">
+        Welcome to the Dashboard
+      </h1>
+    </div>
+    <!-- End Title -->
+
+    <div class="mt-5 max-w-3xl text-center mx-auto">
+      <p class="text-lg text-gray-600"
+      x-text="auth.model.email" >
+      </p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="mt-8 gap-3 flex justify-center">
+      <button @click="logout" class="inline-flex justify-center items-center text-gray-800 
+      gap-x-3 text-center border border-gray-200 bg-white text-sm hover:bg-gray-50
+      font-medium rounded-full py-3 px-4" >
+        Log Out      
+        </button>
+    </div>
+    <!-- End Buttons -->
+  </div>
+</div>
+<!-- End Hero -->
+
+<!-- Card Blog -->
+<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+  <!-- Title -->
+  <div class="max-w-2xl mx-auto text-center mb-10 lg:mb-14">
+    <h2 class="text-2xl font-bold md:text-4xl md:leading-tight">My Cards</h2>
+    <p class="mt-1 text-gray-600">Latest</p>
+  </div>
+  <!-- End Title -->
+
+<!-- Grid -->
+  <div x-data="{
+      loading: false,
+      items: [],
+      page: 0,
+      totalPages: 1,
+
+      async loadItems(reset = false) {
+          this.loading = true;
+          if (reset) {this.page=0; this.items=[];};
+          if (!reset) this.page++;
+          try {
+            if (this.page > this.totalPages) return;
+            const response = await pb.collection('cards').getList(this.page, 9, {
+                    sort: '-created',
+                    filter: `user = '${pb.authStore.model.id}'`
+                })
+
+            this.items = [...this.items, ...response.items];
+            this.totalPages = response.totalPages;
+            if (reset) this.page++;
+          } catch (error) {
+            console.log(error);
+          } finally {
+              this.loading = false;
+          }
+
+      }
+  }" x-init="$nextTick(() => loadItems())" 
+  @items-modified.window="loadItems(true)"
+  class="relative"
+  >
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      @CreateCard()         
+      <template x-for="item in items">
+        @DashboardCard()
+      </template>
+      <template x-if="loading">
+        <span>loading ...</span>
+      </template>
+  </div>
+    
+
+    <div class="mt-12 text-center">
+        <button :disabled="loading" x-show="page < totalPages" 
+        @click="loadItems" class="py-3 px-4 inline-flex
+        items-center gap-x-1 text-sm font-medium
+        rounded-full border border-gray-200 bg-white
+        text-blue-600 shadow-sm hover:bg-gray-50
+        focus:outline-none focus:bg-gray-50 disabled:opacity-50
+        disabled:pointer-events-none" >
+          load more
+        </button>
+    </div>
+
+
+  </div>
+
+</div>
+<!-- End Card Blog -->
+}
+
+templ DashboardCard() {
+<div x-data="{
+        loading: false,
+        editMode: false,
+        card: item,
+        title: item.title,
+        content: item.content,
+
+        hasChanges() {
+            return this.title !== this.card.title || 
+            this.content !== this.card.content;
+        },
+
+        async updateCard() {
+            this.loading = true;
+            if (!this.hasChanges()) {
+                this.editMode = false;
+                return;
+            }
+
+            try {
+                const record = await pb.collection('cards').update(this.card.id, {
+                    'title': this.title,
+                    'content': this.content,
+                    });
+                this.card = record;
+                this.editMode = false;
+            } catch (error) {
+                console.log(error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async deleteCard() {
+            this.loading = true;
+            try {
+                await pb.collection('cards').delete(this.card.id);
+                $dispatch('items-modified');
+            } catch (error) {
+                console.log(error);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }" class="group flex flex-col h-full aspect-[3/4] border border-gray-200 
+    hover:border-transparent hover:shadow-lg focus:outline-none
+    focus:border-transparent focus:shadow-lg transition duration-300
+    rounded-xl p-5"  >
+      <div class="relative h-full w-full flex items-center justify-center
+      text-center">
+        
+            <div x-show="editMode">
+                <input x-model="title" type="text"  class="text-xl font-semibold text-gray-800"  />
+                <textarea x-model="content" class="mt-5 text-gray-600"></textarea>
+            </div>
+          <div x-show="!editMode">
+            <h3 
+            x-text="title"
+            class="text-xl font-semibold text-gray-800">
+              Title
+            </h3>
+            <p
+            x-text="content"
+            class="mt-5 text-gray-600">
+              Content
+            </p>
+          </div>
+
+          <div class="absolute top-2 end-2">
+            <button class="bg-gray-800 text-white py-1 px-4  rounded-md "
+            @click="editMode ? updateCard() : editMode = true"
+            x-text="editMode ? 'Submit' : 'Edit'" >Edit</button>
+
+            <button @click="deleteCard" 
+            class="border py-1 px-4 rounded-md border-gray-800 ">Delete</button>
+          </div>
+      </div>
+    </div>
+    <!-- End Card -->
+}
+
+
+templ CreateCard() {
+
+<div x-data="{
+        loading: false,
+        visible: false,
+        title: '',
+        content: '',
+
+        async create() {
+            this.loading = true;
+            try {
+                const record = await pb.collection('cards').create({
+                        'title': this.title,
+                        'content': this.content,
+                        'user': pb.authStore.model.id
+                    });
+                if (!record) throw new Error('could not be created!');
+                $dispatch('items-modified');
+                this.visible = false;
+                this.title= '';
+                this.content = '';
+            } catch (error) {
+                console.log(error);
+            } finally {
+                this.loading = false;
+            }
+        }
+
+    }" class="group flex flex-col h-full aspect-[3/4] border border-gray-200 
+    hover:border-transparent hover:shadow-lg focus:outline-none
+    focus:border-transparent focus:shadow-lg transition duration-300
+    rounded-xl p-5"  >
+
+        <button x-show="!visible" @click="visible = true"
+        class="w-full h-full flex items-center justify-center">
+            <span>Create New</span>
+        </button>
+
+      <div x-show="visible" class="relative h-full w-full flex items-center justify-center">
+
+          <div class="space-y-4 pt-5">
+                <div>
+                    <label for="titleInput">Title</label>
+                    <input maxlength="80" id="titleInput" x-model="title" type="text" 
+                    class="w-full min-h-12 border-2 border-gray-200 p-1.5 rounded
+                    font-semibold text-gray-800" placeholder="Enter a title ..."  />
+                </div>
+                <div>
+                    <label for="contentInput">Content</label>
+                    <textarea maxlength="280" id="contentInput" x-model="content" placeholder="Content here ..."
+                    class="w-full resize-none min-h-36 border-2 border-gray-200 p-1.5 text-gray-600
+                    text-sm"></textarea>
+                </div>
+          </div>
+
+          <div class="absolute top-2 end-2">
+            <button class="bg-gray-800 text-white py-1 px-4  rounded-md "
+            @click="create" :disabled="loading || !title.trim() || !content.trim()"
+            >Submit</button>
+
+            <button @click="visible = false" 
+            class="border py-1 px-4 rounded-md border-gray-800 ">Cancel</button>
+          </div>
+      </div>
+    </div>
+    <!-- End Card -->
+}
+
