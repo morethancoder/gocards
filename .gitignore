@@ -23,3 +23,39 @@ go.work.sum
 
 # env file
 .env
+
+
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Bun
+bun.lockb
+
+# Package managers
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
