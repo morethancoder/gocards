@@ -1,7 +1,7 @@
 # Tools
 GO_BIN := $(shell which go)
 BUN_BIN := $(shell which bun)
-FSWATCH_BIN := $(shell which fswatch)
+ENTR_BIN := $(shell which entr)
 TEMPL_BIN := $(shell which templ)
 
 # Project info
@@ -42,7 +42,7 @@ check-deps:
 	@printf "$(DIM)────────────────────────────────────$(RESET)\n"
 	@test -n "$(GO_BIN)" || (printf "✗ Go not installed\n" && exit 1)
 	@test -n "$(BUN_BIN)" || (printf "✗ Bun not installed\n" && exit 1)
-	@test -n "$(FSWATCH_BIN)" || (printf "✗ fswatch not installed\n" && exit 1)
+	@test -n "$(ENTR_BIN)" || (printf "✗ entr not installed\n" && exit 1)
 	@test -n "$(TEMPL_BIN)" || (printf "✗ templ not installed\n" && exit 1)
 	@printf "$(CHECK) All dependencies ready\n"
 
@@ -76,7 +76,7 @@ setup-go:
 setup-tailwind:
 	@printf "\n$(CYAN)Setting up Tailwind CSS$(RESET)\n"
 	@printf "$(DIM)────────────────────────────────────$(RESET)\n"
-	@$(BUN_BIN) install tailwindcss@latest >/dev/null 2>&1
+	@$(BUN_BIN) install tailwindcss@latest @tailwindcss/cli >/dev/null 2>&1
 	@echo $(TAILWIND_CONFIG) > tailwind.config.js
 	@echo '@tailwind base;\n@tailwind components;\n@tailwind utilities;' > $(STATIC_DIR)/css/input.css
 	@printf "$(CHECK) Tailwind CSS ready\n"
@@ -115,7 +115,7 @@ watch:
 	@printf "\n$(CYAN)Watching for changes$(RESET)\n"
 	@printf "$(DIM)────────────────────────────────────$(RESET)\n"
 	@printf "\n$(CYAN)Rebuilding...$(RESET)\n"
-	@find views -type f -name "*.templ" | entr -r make serve
+	@find views -type f -name "*.templ" | $(ENTR_BIN) -r make serve
 
 clean:
 	@printf "\n$(CYAN)Cleaning build files$(RESET)\n"
@@ -155,4 +155,3 @@ help:
 	@printf "  make source$(RESET)        $(ARROW) Load environment variables\n"
 	@printf "  make sync$(RESET)          $(ARROW) run browser-sync\n"
 	@printf "  make test$(RESET)          $(ARROW) Run tests\n\n"
-
