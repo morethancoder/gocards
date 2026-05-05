@@ -1,7 +1,7 @@
 # Tools
 GO_BIN := $(shell which go)
 BUN_BIN := $(shell which bun)
-FSWATCH_BIN := $(shell which fswatch)
+ENTR_BIN := $(shell which entr)
 TEMPL_BIN := $(shell which templ)
 
 # Project info
@@ -42,7 +42,7 @@ check-deps:
 	@printf "$(DIM)────────────────────────────────────$(RESET)\n"
 	@test -n "$(GO_BIN)" || (printf "✗ Go not installed\n" && exit 1)
 	@test -n "$(BUN_BIN)" || (printf "✗ Bun not installed\n" && exit 1)
-	@test -n "$(FSWATCH_BIN)" || (printf "✗ fswatch not installed\n" && exit 1)
+	@test -n "$(ENTR_BIN)" || (printf "✗ entr not installed\n" && exit 1)
 	@test -n "$(TEMPL_BIN)" || (printf "✗ templ not installed\n" && exit 1)
 	@printf "$(CHECK) All dependencies ready\n"
 
